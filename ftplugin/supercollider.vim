@@ -147,10 +147,20 @@ endfunction
 
 
 function SCFormatText(text)
-	let l:text = substitute(a:text, '\', '\\\\', 'g')
-	let l:text = substitute(l:text, '"', '\\"', 'g')
-	let l:text = substitute(l:text, '`', '\\`', 'g')
-  let l:text = '"' . l:text .'"'
+	let l:text = substitute(a:text, 'AAAAA', 'AAAA', '')
+	"these escape various quotes. Needed only if we are calling system()
+	"let l:text = substitute(a:text, '\', '\\\\', 'g')
+	"let l:text = substitute(l:text, '"', '\\"', 'g')
+	"let l:text = substitute(l:text, '`', '\\`', 'g')
+	" strip /* */ comments
+	let l:text = substitute(l:text, '\/\*.*\*\/', '', 'g')
+	" strip // comments
+	let l:text = substitute(l:text, '\/\/.\{-}\n', '\n', 'g')
+	" collapse everything to one line
+	let l:text = substitute(l:text, '\n', '', 'g')
+  " this encloses the whole string in quotes. Needed only if we
+  " are calling system()
+  "let l:text = '"' . l:text .'"'
 
   return l:text
 endfunction
@@ -158,7 +168,8 @@ endfunction
 function SendToSC(text)
   let l:text = SCFormatText(a:text)
 
-  call system(s:sclangDispatcher . " -i " . l:text)
+  "Write the output to the sclang-pipe, followed by newline
+  redir! > /tmp/sclang-pipe  | echo l:text . "\n" | redir END
   redraw!
 endfunction
 
@@ -208,7 +219,8 @@ function SClangStart()
             echo "Sorry, screen is not supported yet.."
         endif
     else
-        call system(s:sclangTerm . " " . s:sclangPipeApp . "&")
+        echo s:sclangTerm . " " . s:sclangPipeApp . "&"
+		call system(s:sclangTerm . " " . s:sclangPipeApp . "&")
         let s:sclangStarted = 1
     endif
 endfunction
